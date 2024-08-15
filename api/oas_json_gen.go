@@ -50,6 +50,44 @@ func (s *FormPostBadRequest) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes FormPostInternalServerError as json.
+func (s *FormPostInternalServerError) Encode(e *jx.Encoder) {
+	unwrapped := (*Response)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes FormPostInternalServerError from json.
+func (s *FormPostInternalServerError) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode FormPostInternalServerError to nil")
+	}
+	var unwrapped Response
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = FormPostInternalServerError(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *FormPostInternalServerError) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *FormPostInternalServerError) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes FormPostOK as json.
 func (s *FormPostOK) Encode(e *jx.Encoder) {
 	unwrapped := (*Response)(s)
@@ -126,6 +164,41 @@ func (s *FormPostUnprocessableEntity) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes bool as json.
+func (o OptBool) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Bool(bool(o.Value))
+}
+
+// Decode decodes bool from json.
+func (o *OptBool) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptBool to nil")
+	}
+	o.Set = true
+	v, err := d.Bool()
+	if err != nil {
+		return err
+	}
+	o.Value = bool(v)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptBool) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptBool) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *Response) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -139,10 +212,17 @@ func (s *Response) encodeFields(e *jx.Encoder) {
 		e.FieldStart("message")
 		e.Str(s.Message)
 	}
+	{
+		if s.Success.Set {
+			e.FieldStart("success")
+			s.Success.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfResponse = [1]string{
+var jsonFieldsNameOfResponse = [2]string{
 	0: "message",
+	1: "success",
 }
 
 // Decode decodes Response from json.
@@ -165,6 +245,16 @@ func (s *Response) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"message\"")
+			}
+		case "success":
+			if err := func() error {
+				s.Success.Reset()
+				if err := s.Success.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"success\"")
 			}
 		default:
 			return d.Skip()

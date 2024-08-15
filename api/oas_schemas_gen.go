@@ -73,8 +73,7 @@ type FormPostBadRequest Response
 
 func (*FormPostBadRequest) formPostRes() {}
 
-// FormPostInternalServerError is response for FormPost operation.
-type FormPostInternalServerError struct{}
+type FormPostInternalServerError Response
 
 func (*FormPostInternalServerError) formPostRes() {}
 
@@ -86,9 +85,56 @@ type FormPostUnprocessableEntity Response
 
 func (*FormPostUnprocessableEntity) formPostRes() {}
 
+// NewOptBool returns new OptBool with value set to v.
+func NewOptBool(v bool) OptBool {
+	return OptBool{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptBool is optional bool.
+type OptBool struct {
+	Value bool
+	Set   bool
+}
+
+// IsSet returns true if OptBool was set.
+func (o OptBool) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptBool) Reset() {
+	var v bool
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptBool) SetTo(v bool) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptBool) Get() (v bool, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptBool) Or(d bool) bool {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // Ref: #/components/schemas/Response
 type Response struct {
-	Message string `json:"message"`
+	Message string  `json:"message"`
+	Success OptBool `json:"success"`
 }
 
 // GetMessage returns the value of Message.
@@ -96,9 +142,19 @@ func (s *Response) GetMessage() string {
 	return s.Message
 }
 
+// GetSuccess returns the value of Success.
+func (s *Response) GetSuccess() OptBool {
+	return s.Success
+}
+
 // SetMessage sets the value of Message.
 func (s *Response) SetMessage(val string) {
 	s.Message = val
+}
+
+// SetSuccess sets the value of Success.
+func (s *Response) SetSuccess(val OptBool) {
+	s.Success = val
 }
 
 // ResponseStatusCode wraps Response with StatusCode.

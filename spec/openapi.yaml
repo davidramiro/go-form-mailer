@@ -41,6 +41,10 @@ paths:
                 $ref: '#/components/schemas/Response'
         '500':
           description: Internal Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
         default:
           description: Default response
           content:
@@ -80,5 +84,7 @@ components:
         message:
           type: string
           example: Thanks for your message!
+        success:
+          type: boolean
       required:
         - message

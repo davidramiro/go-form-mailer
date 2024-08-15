@@ -42,7 +42,10 @@ func (f *FormHandler) FormPost(ctx context.Context, req *api.FormData) (api.Form
 		req.Message == "" ||
 		req.Email == "" ||
 		req.FrcMinusCaptchaMinusSolution == "" {
-		return &api.FormPostBadRequest{}, errors.New("missing field(s)")
+		return &api.FormPostBadRequest{
+			Message: "Incomplete form",
+			Success: api.NewOptBool(false),
+		}, nil
 	}
 
 	solution := req.FrcMinusCaptchaMinusSolution
@@ -50,23 +53,39 @@ func (f *FormHandler) FormPost(ctx context.Context, req *api.FormData) (api.Form
 	if err != nil {
 		if errors.Is(err, friendlycaptcha.ErrVerificationFailedDueToClientError) {
 			log.Error().Err(err).Msg("frc client misconfigured")
-			return &api.FormPostInternalServerError{}, errors.New("captcha client error")
+			return &api.FormPostInternalServerError{
+				Message: "Captcha client error",
+				Success: api.NewOptBool(false),
+			}, nil
 		} else if errors.Is(err, friendlycaptcha.ErrVerificationRequest) {
 			log.Error().Err(err).Msg("frc client api error")
-			return &api.FormPostInternalServerError{}, errors.New("captcha api unreachable")
+			return &api.FormPostInternalServerError{
+				Message: "Captcha API error",
+				Success: api.NewOptBool(false),
+			}, nil
 		}
 	}
 
 	if !shouldAccept {
-		return &api.FormPostBadRequest{}, errors.New("captcha solution is invalid")
+		return &api.FormPostBadRequest{
+			Message: "Invalid Captcha",
+			Success: api.NewOptBool(false),
+		}, nil
 	}
 
 	err = f.mailService.Send(*req)
 	if err != nil {
-		return &api.FormPostInternalServerError{}, errors.New("SMTP error")
+		log.Error().Err(err).Msg("smtp error")
+		return &api.FormPostInternalServerError{
+			Message: "Error sending email",
+			Success: api.NewOptBool(false),
+		}, nil
 	}
 
-	return &api.FormPostOK{Message: "Message sent. I will get back to you asap!"}, nil
+	return &api.FormPostOK{
+		Message: "Message sent. I will get back to you asap!",
+		Success: api.NewOptBool(true),
+	}, nil
 }
 
 func (f *FormHandler) NewError(_ context.Context, err error) *api.ResponseStatusCode {
