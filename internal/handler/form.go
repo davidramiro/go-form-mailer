@@ -37,7 +37,11 @@ func (f *FormHandler) FormPost(ctx context.Context, req *api.FormData) (api.Form
 
 	log.Info().Interface("request", req).Msg("incoming form request")
 
-	if req.Name == "" || req.Subject == "" || req.Message == "" || req.Email == "" || req.CaptchaSolution == "" {
+	if req.Name == "" ||
+		req.Subject == "" ||
+		req.Message == "" ||
+		req.Email == "" ||
+		req.CaptchaSolution == "" {
 		return &api.FormPostBadRequest{}, errors.New("missing field(s)")
 	}
 

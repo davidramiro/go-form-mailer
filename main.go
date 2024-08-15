@@ -6,12 +6,16 @@ import (
 
 	friendlycaptcha "github.com/friendlycaptcha/friendly-captcha-go-sdk"
 
+	_ "github.com/ogen-go/ogen/gen"
+
 	"github.com/davidramiro/go-form-mailer/api"
 	"github.com/davidramiro/go-form-mailer/internal/handler"
 	"github.com/davidramiro/go-form-mailer/internal/service"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
+
+//go:generate go run github.com/ogen-go/ogen/cmd/ogen -package api --clean spec/openapi.yaml
 
 func main() {
 	log.Info().Msg("startup, reading config...")
