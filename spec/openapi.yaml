@@ -1,0 +1,84 @@
+openapi: 3.0.3
+info:
+  title: Form mailer API
+  description: |-
+    This API is meant to be called by an AJAX web form to validate a FriendlyCaptcha puzzle and send an email on success
+  license:
+    name: GPL v3
+    url: https://www.gnu.org/licenses/gpl-3.0.de.html
+  version: 1.0.0
+
+paths:
+  /form:
+    post:
+      summary: Submit a form
+      description: Validates form and sends SMTP mail on success
+      requestBody:
+        description: Form body
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FormData'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '500':
+          description: Internal Error
+        default:
+          description: Default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+components:
+  schemas:
+    FormData:
+      type: object
+      properties:
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john@doe.com
+        subject:
+          type: string
+          example: Title
+        message:
+          type: string
+          example: Hello
+        captchaSolution:
+          type: string
+      required:
+        - name
+        - email
+        - subject
+        - message
+        - captchaSolution
+    Response:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Thanks for your message!
+      required:
+        - message

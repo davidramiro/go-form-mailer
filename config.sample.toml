@@ -1,0 +1,14 @@
+[smtp]
+host = "mail.smtp.com"
+port = 587
+from = "sender@smtp.com"
+user = "smtpuser"
+pass = "password"
+to = "receiver@smtp.com"
+
+[server]
+port = 8080
+
+[frc]
+apiKey = "friendly-captcha-api-key"
+siteKey = "friendly-captcha-site-key"

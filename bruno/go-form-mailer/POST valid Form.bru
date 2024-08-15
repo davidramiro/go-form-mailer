@@ -1,0 +1,29 @@
+meta {
+  name: POST Form
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8080/form
+  body: formUrlEncoded
+  auth: none
+}
+
+body:json {
+  {
+    "name": "John Doe",
+    "email": "john@doe.com",
+    "subject": "Title",
+    "message": "Hello",
+    "captchaSolution": "string"
+  }
+}
+
+body:form-urlencoded {
+  name: John Doe
+  email: john@doe.com
+  subject: Subject
+  message: Hello
+  captchaSolution: foo
+}

@@ -1,0 +1,31 @@
+version: '3'
+
+tasks:
+  install-dev-deps:
+    description: installs dev dependencies
+    cmds:
+      - task: install-goimports
+
+  install-goimports:
+    cmd: go install golang.org/x/tools/cmd/goimports@latest
+    status:
+      - which goimports
+
+  generate:
+    description: generate server interface and types
+    cmds:
+      - go generate ./...
+
+  format:
+    description: formats go files
+    cmds:
+      - task: install-dev-deps
+      - gofmt -s -w .
+      - goimports -l -w .
+
+  build:
+    description: build project
+    cmds:
+      - task: generate
+      - go mod verify
+      - go build -v
