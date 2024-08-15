@@ -177,7 +177,7 @@ func (s *Server) decodeFormPostRequest(r *http.Request) (
 		}
 		{
 			cfg := uri.QueryParameterDecodingConfig{
-				Name:    "captchaSolution",
+				Name:    "frc-captcha-solution",
 				Style:   uri.QueryStyleForm,
 				Explode: true,
 			}
@@ -193,10 +193,10 @@ func (s *Server) decodeFormPostRequest(r *http.Request) (
 						return err
 					}
 
-					request.CaptchaSolution = c
+					request.FrcMinusCaptchaMinusSolution = c
 					return nil
 				}); err != nil {
-					return req, close, errors.Wrap(err, "decode \"captchaSolution\"")
+					return req, close, errors.Wrap(err, "decode \"frc-captcha-solution\"")
 				}
 			} else {
 				return req, close, errors.Wrap(err, "query")

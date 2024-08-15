@@ -66,14 +66,14 @@ components:
         message:
           type: string
           example: Hello
-        captchaSolution:
+        frc-captcha-solution:
           type: string
       required:
         - name
         - email
         - subject
         - message
-        - captchaSolution
+        - frc-captcha-solution
     Response:
       type: object
       properties:

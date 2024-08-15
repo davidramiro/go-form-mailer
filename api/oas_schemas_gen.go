@@ -12,11 +12,11 @@ func (s *ResponseStatusCode) Error() string {
 
 // Ref: #/components/schemas/FormData
 type FormData struct {
-	Name            string `json:"name"`
-	Email           string `json:"email"`
-	Subject         string `json:"subject"`
-	Message         string `json:"message"`
-	CaptchaSolution string `json:"captchaSolution"`
+	Name                         string `json:"name"`
+	Email                        string `json:"email"`
+	Subject                      string `json:"subject"`
+	Message                      string `json:"message"`
+	FrcMinusCaptchaMinusSolution string `json:"frc-captcha-solution"`
 }
 
 // GetName returns the value of Name.
@@ -39,9 +39,9 @@ func (s *FormData) GetMessage() string {
 	return s.Message
 }
 
-// GetCaptchaSolution returns the value of CaptchaSolution.
-func (s *FormData) GetCaptchaSolution() string {
-	return s.CaptchaSolution
+// GetFrcMinusCaptchaMinusSolution returns the value of FrcMinusCaptchaMinusSolution.
+func (s *FormData) GetFrcMinusCaptchaMinusSolution() string {
+	return s.FrcMinusCaptchaMinusSolution
 }
 
 // SetName sets the value of Name.
@@ -64,9 +64,9 @@ func (s *FormData) SetMessage(val string) {
 	s.Message = val
 }
 
-// SetCaptchaSolution sets the value of CaptchaSolution.
-func (s *FormData) SetCaptchaSolution(val string) {
-	s.CaptchaSolution = val
+// SetFrcMinusCaptchaMinusSolution sets the value of FrcMinusCaptchaMinusSolution.
+func (s *FormData) SetFrcMinusCaptchaMinusSolution(val string) {
+	s.FrcMinusCaptchaMinusSolution = val
 }
 
 type FormPostBadRequest Response

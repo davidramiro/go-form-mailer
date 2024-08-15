@@ -41,11 +41,11 @@ func (f *FormHandler) FormPost(ctx context.Context, req *api.FormData) (api.Form
 		req.Subject == "" ||
 		req.Message == "" ||
 		req.Email == "" ||
-		req.CaptchaSolution == "" {
+		req.FrcMinusCaptchaMinusSolution == "" {
 		return &api.FormPostBadRequest{}, errors.New("missing field(s)")
 	}
 
-	solution := req.CaptchaSolution
+	solution := req.FrcMinusCaptchaMinusSolution
 	shouldAccept, err := f.frcClient.CheckCaptchaSolution(ctx, solution)
 	if err != nil {
 		if errors.Is(err, friendlycaptcha.ErrVerificationFailedDueToClientError) {

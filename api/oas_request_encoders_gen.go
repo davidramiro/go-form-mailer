@@ -74,14 +74,14 @@ func encodeFormPostRequest(
 		}
 	}
 	{
-		// Encode "captchaSolution" form field.
+		// Encode "frc-captcha-solution" form field.
 		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "captchaSolution",
+			Name:    "frc-captcha-solution",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			return e.EncodeValue(conv.StringToString(request.CaptchaSolution))
+			return e.EncodeValue(conv.StringToString(request.FrcMinusCaptchaMinusSolution))
 		}); err != nil {
 			return errors.Wrap(err, "encode query")
 		}
