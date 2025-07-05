@@ -6,16 +6,11 @@ import (
 
 	friendlycaptcha "github.com/friendlycaptcha/friendly-captcha-go-sdk"
 
-	_ "github.com/ogen-go/ogen/gen"
-
-	"github.com/davidramiro/go-form-mailer/api"
 	"github.com/davidramiro/go-form-mailer/internal/handler"
 	"github.com/davidramiro/go-form-mailer/internal/service"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
-
-//go:generate go run github.com/ogen-go/ogen/cmd/ogen -package api --clean spec/openapi.yaml
 
 func main() {
 	log.Info().Msg("startup, reading config...")
@@ -52,13 +47,17 @@ func main() {
 
 	log.Info().Msg("spinning up server")
 
-	srv, err := api.NewServer(fs)
-	if err != nil {
-		log.Fatal().Err(err).Msg("error creating server")
+	m := http.NewServeMux()
+	m.Handle("/form", fs)
+
+	srv := &http.Server{
+		ReadTimeout:  viper.GetDuration("server.timeout"),
+		WriteTimeout: viper.GetDuration("server.timeout"),
+		Handler:      m,
+		Addr:         fmt.Sprintf(":%d", viper.GetInt("server.port")),
 	}
 
-	listenAddress := fmt.Sprintf(":%d", viper.GetInt("server.port"))
-	log.Fatal().
-		Err(http.ListenAndServe(listenAddress, srv)).
-		Msg("form mailer server closed")
+	if err := srv.ListenAndServe(); err != nil {
+		log.Fatal().Err(err).Msg("error starting server")
+	}
 }

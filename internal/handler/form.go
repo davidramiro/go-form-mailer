@@ -1,21 +1,17 @@
 package handler
 
 import (
-	"context"
-	"fmt"
+	"encoding/json"
 	"net/http"
-	"sync"
 
 	friendlycaptcha "github.com/friendlycaptcha/friendly-captcha-go-sdk"
 	"github.com/rs/zerolog/log"
 
-	"github.com/davidramiro/go-form-mailer/api"
 	"github.com/davidramiro/go-form-mailer/internal/service"
 	"github.com/go-faster/errors"
 )
 
 type FormHandler struct {
-	mutex       sync.Mutex
 	mailService service.MailService
 	frcClient   friendlycaptcha.Client
 }
@@ -31,71 +27,71 @@ func NewFormHandler(mailService *service.MailService, frcClient friendlycaptcha.
 	}, nil
 }
 
-func (f *FormHandler) FormPost(ctx context.Context, req *api.FormData) (api.FormPostRes, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	log.Info().Interface("request", req).Msg("incoming form request")
-
-	if req.Name == "" ||
-		req.Subject == "" ||
-		req.Message == "" ||
-		req.Email == "" ||
-		req.FrcMinusCaptchaMinusSolution == "" {
-		return &api.FormPostBadRequest{
-			Message: "Incomplete form",
-			Success: api.NewOptBool(false),
-		}, nil
+func (f *FormHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		f.respond(w, "Error parsing form", http.StatusInternalServerError)
 	}
 
-	solution := req.FrcMinusCaptchaMinusSolution
-	shouldAccept, err := f.frcClient.CheckCaptchaSolution(ctx, solution)
+	req := service.MailRequest{
+		Name:               r.Form.Get("name"),
+		Email:              r.Form.Get("email"),
+		Message:            r.Form.Get("message"),
+		Subject:            r.Form.Get("subject"),
+		FrcCaptchaSolution: r.Form.Get("frc-captcha-solution"),
+	}
+
+	if !req.IsComplete() {
+		f.respond(w, "Missing required fields", http.StatusBadRequest)
+		return
+	}
+
+	log.Info().Interface("MailRequest", req).Msg("incoming form MailRequest")
+
+	solution := req.FrcCaptchaSolution
+	shouldAccept, err := f.frcClient.CheckCaptchaSolution(r.Context(), solution)
 	if err != nil {
-		if errors.Is(err, friendlycaptcha.ErrVerificationFailedDueToClientError) {
-			log.Error().Err(err).Msg("frc client misconfigured")
-			return &api.FormPostInternalServerError{
-				Message: "Captcha client error",
-				Success: api.NewOptBool(false),
-			}, nil
-		} else if errors.Is(err, friendlycaptcha.ErrVerificationRequest) {
-			log.Error().Err(err).Msg("frc client api error")
-			return &api.FormPostInternalServerError{
-				Message: "Captcha API error",
-				Success: api.NewOptBool(false),
-			}, nil
-		}
+		log.Error().Err(err).Msg("captcha check error")
+		f.respond(w, "Captcha error", http.StatusInternalServerError)
+		return
 	}
 
 	if !shouldAccept {
-		return &api.FormPostBadRequest{
-			Message: "Invalid Captcha",
-			Success: api.NewOptBool(false),
-		}, nil
+		f.respond(w, "Invalid captcha", http.StatusBadRequest)
+		return
 	}
 
-	err = f.mailService.Send(*req)
+	err = f.mailService.Send(req)
 	if err != nil {
 		log.Error().Err(err).Msg("smtp error")
-		return &api.FormPostInternalServerError{
-			Message: "Error sending email",
-			Success: api.NewOptBool(false),
-		}, nil
+		f.respond(w, "Captcha error", http.StatusInternalServerError)
+		return
 	}
 
-	return &api.FormPostOK{
-		Message: "Message sent. I will get back to you asap!",
-		Success: api.NewOptBool(true),
-	}, nil
+	f.respond(w, "Message sent. I will get back to you asap!", http.StatusOK)
 }
 
-func (f *FormHandler) NewError(_ context.Context, err error) *api.ResponseStatusCode {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
+type response struct {
+	Message string `json:"message"`
+	Success bool   `json:"success"`
+}
 
-	return &api.ResponseStatusCode{
-		StatusCode: http.StatusBadRequest,
-		Response: api.Response{
-			Message: fmt.Sprintf("Failed sending message: %s", err.Error()),
-		},
+func (f *FormHandler) respond(w http.ResponseWriter, msg string, statusCode int) {
+	res := response{
+		Message: msg,
+		Success: http.StatusOK == statusCode,
+	}
+
+	jsonRes, err := json.Marshal(res)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	_, err = w.Write(jsonRes)
+	if err != nil {
+		log.Warn().Err(err).Msg("error writing response")
 	}
 }

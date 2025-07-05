@@ -8,6 +8,7 @@ to = "receiver@smtp.com"
 
 [server]
 port = 8080
+timeout = "20s"
 
 [frc]
 apiKey = "friendly-captcha-api-key"

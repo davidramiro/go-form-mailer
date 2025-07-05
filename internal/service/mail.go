@@ -9,9 +9,9 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/rs/zerolog/log"
+	"github.com/go-faster/errors"
 
-	"github.com/davidramiro/go-form-mailer/api"
+	"github.com/rs/zerolog/log"
 )
 
 type MailService struct {
@@ -27,6 +27,14 @@ type MailServiceParams struct {
 	ToMail   string
 }
 
+type MailRequest struct {
+	Name               string `json:"name"`
+	Email              string `json:"email"`
+	Message            string `json:"message"`
+	Subject            string `json:"subject"`
+	FrcCaptchaSolution string `json:"frc-captcha-solution"`
+}
+
 func NewMailService(params MailServiceParams) (*MailService, error) {
 	err := ValidateMailParams(params)
 	if err != nil {
@@ -39,7 +47,7 @@ func NewMailService(params MailServiceParams) (*MailService, error) {
 func ValidateMailParams(s interface{}) error {
 	structType := reflect.TypeOf(s)
 	if structType.Kind() != reflect.Struct {
-		return fmt.Errorf("input param should be a struct")
+		return errors.New("input param should be a struct")
 	}
 
 	structVal := reflect.ValueOf(s)
@@ -52,13 +60,12 @@ func ValidateMailParams(s interface{}) error {
 		if !isSet {
 			return fmt.Errorf("%s should be set", fieldName)
 		}
-
 	}
 
 	return nil
 }
 
-func (m *MailService) Send(mail api.FormData) error {
+func (m *MailService) Send(mail MailRequest) error {
 	to := []string{
 		m.params.ToMail,
 	}
@@ -73,7 +80,7 @@ func (m *MailService) Send(mail api.FormData) error {
 
 	mimeHeaders := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	mailHeader := fmt.Sprintf("Subject: %s \n%s\n\n", mail.Subject, mimeHeaders)
-	body.Write([]byte(mailHeader))
+	body.WriteString(mailHeader)
 
 	err = t.Execute(&body, struct {
 		Name    string
@@ -106,4 +113,8 @@ func (m *MailService) Send(mail api.FormData) error {
 	log.Info().Msg("email sent")
 
 	return nil
+}
+
+func (r MailRequest) IsComplete() bool {
+	return r.Name != "" && r.Email != "" && r.Message != "" && r.Subject != "" && r.FrcCaptchaSolution != ""
 }
