@@ -31,6 +31,7 @@ func (f *FormHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		f.respond(w, "Error parsing form", http.StatusInternalServerError)
+		return
 	}
 
 	req := service.MailRequest{
