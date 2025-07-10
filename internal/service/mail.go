@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"net"
+	"net/mail"
 	"net/smtp"
 	"reflect"
 	"strconv"
@@ -76,13 +77,16 @@ func (m *MailService) Send(mail MailRequest) error {
 		return fmt.Errorf("template parsing failed: %w", err)
 	}
 
-	var body bytes.Buffer
+	var body *bytes.Buffer
+	_, err = fmt.Fprintf(body,
+		"Subject: %s \n%s\n\n",
+		mail.Subject,
+		"MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n")
+	if err != nil {
+		return fmt.Errorf("writing mail header failed: %w", err)
+	}
 
-	mimeHeaders := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	mailHeader := fmt.Sprintf("Subject: %s \n%s\n\n", mail.Subject, mimeHeaders)
-	body.WriteString(mailHeader)
-
-	err = t.Execute(&body, struct {
+	err = t.Execute(body, struct {
 		Name    string
 		Message string
 		Email   string
@@ -115,6 +119,31 @@ func (m *MailService) Send(mail MailRequest) error {
 	return nil
 }
 
-func (r MailRequest) IsComplete() bool {
-	return r.Name != "" && r.Email != "" && r.Message != "" && r.Subject != "" && r.FrcCaptchaSolution != ""
+const (
+	maxShort = 256
+	maxLong  = 80000
+)
+
+func (r MailRequest) Validate() error {
+	if len(r.Name) == 0 || len(r.Name) > maxShort {
+		return errors.New("Invalid name")
+	}
+	if len(r.Email) == 0 || len(r.Email) > maxShort {
+		return errors.New("invalid email length")
+	}
+	if _, err := mail.ParseAddress(r.Email); err != nil {
+		return errors.New("invalid email format")
+	}
+	if len(r.Subject) == 0 || len(r.Subject) > maxShort {
+		return errors.New("invalid subject")
+	}
+	if len(r.Message) == 0 || len(r.Message) > maxLong {
+		return errors.New("invalid message")
+	}
+
+	if len(r.FrcCaptchaSolution) == 0 || len(r.FrcCaptchaSolution) > maxShort {
+		return errors.New("invalid captcha solution")
+	}
+
+	return nil
 }

@@ -42,8 +42,8 @@ func (f *FormHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		FrcCaptchaSolution: r.Form.Get("frc-captcha-solution"),
 	}
 
-	if !req.IsComplete() {
-		f.respond(w, "Missing required fields", http.StatusBadRequest)
+	if err := req.Validate(); err != nil {
+		f.respond(w, "Validation failed: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -65,7 +65,7 @@ func (f *FormHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err = f.mailService.Send(req)
 	if err != nil {
 		log.Error().Err(err).Msg("smtp error")
-		f.respond(w, "Captcha error", http.StatusInternalServerError)
+		f.respond(w, "Error sending mail", http.StatusInternalServerError)
 		return
 	}
 
