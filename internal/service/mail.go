@@ -77,8 +77,8 @@ func (m *MailService) Send(mail MailRequest) error {
 		return fmt.Errorf("template parsing failed: %w", err)
 	}
 
-	var body *bytes.Buffer
-	_, err = fmt.Fprintf(body,
+	var body bytes.Buffer
+	_, err = fmt.Fprintf(&body,
 		"Subject: %s \n%s\n\n",
 		mail.Subject,
 		"MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n")
@@ -86,7 +86,7 @@ func (m *MailService) Send(mail MailRequest) error {
 		return fmt.Errorf("writing mail header failed: %w", err)
 	}
 
-	err = t.Execute(body, struct {
+	err = t.Execute(&body, struct {
 		Name    string
 		Message string
 		Email   string
