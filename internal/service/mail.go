@@ -141,7 +141,7 @@ func (r MailRequest) Validate() error {
 		return errors.New("invalid message")
 	}
 
-	if len(r.FrcCaptchaSolution) == 0 || len(r.FrcCaptchaSolution) > maxShort {
+	if len(r.FrcCaptchaSolution) == 0 {
 		return errors.New("invalid captcha solution")
 	}
 
