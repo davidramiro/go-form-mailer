@@ -87,11 +87,13 @@ const (
 )
 
 func (f *FormHandler) respond(w http.ResponseWriter, err error) {
-	w.WriteHeader(http.StatusOK)
+
 	var response string
 	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 		response = fmt.Sprintf(responseHTMLTemplate, "An error occured: "+err.Error())
 	} else {
+		w.WriteHeader(http.StatusOK)
 		response = fmt.Sprintf(responseHTMLTemplate, "Message has been sent. I will get back to you asap!")
 	}
 
