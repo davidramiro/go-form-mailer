@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"encoding/json"
+	"fmt"
 	"net/http"
 
 	friendlycaptcha "github.com/friendlycaptcha/friendly-captcha-go-sdk"
@@ -30,7 +30,7 @@ func NewFormHandler(mailService *service.MailService, frcClient friendlycaptcha.
 func (f *FormHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		f.respond(w, "Error parsing form", http.StatusInternalServerError)
+		f.respond(w, errors.New("Error parsing form"))
 		return
 	}
 
@@ -43,7 +43,7 @@ func (f *FormHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := req.Validate(); err != nil {
-		f.respond(w, "Validation failed: "+err.Error(), http.StatusBadRequest)
+		f.respond(w, errors.New("Validation failed: "+err.Error()))
 		return
 	}
 
@@ -53,46 +53,50 @@ func (f *FormHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	shouldAccept, err := f.frcClient.CheckCaptchaSolution(r.Context(), solution)
 	if err != nil {
 		log.Error().Err(err).Msg("captcha check error")
-		f.respond(w, "Captcha error", http.StatusInternalServerError)
+		f.respond(w, errors.New("Captcha error"))
 		return
 	}
 
 	if !shouldAccept {
-		f.respond(w, "Invalid captcha", http.StatusBadRequest)
+		f.respond(w, errors.New("Invalid captcha"))
 		return
 	}
 
 	err = f.mailService.Send(req)
 	if err != nil {
 		log.Error().Err(err).Msg("smtp error")
-		f.respond(w, "Error sending mail", http.StatusInternalServerError)
+		f.respond(w, errors.New("Error sending mail"))
 		return
 	}
 
-	f.respond(w, "Message sent. I will get back to you asap!", http.StatusOK)
+	f.respond(w, nil)
 }
 
-type response struct {
-	Message string `json:"message"`
-	Success bool   `json:"success"`
-}
+const (
+	responseHTMLTemplate = `<div class="col-span-full" id="alert">
+<div class="flex rounded-md bg-primary-100 px-4 py-3 dark:bg-primary-900">
+<span class="pe-3 text-primary-400">
+<span class="icon inline-block align-text-middle">
+<svg aria-hidden="true" class="hi-svg-inline" fill="currentcolor" height="1em" id="mdi-information-outline" viewBox="0 0 24 24" width="1em">
+<path d="M11 9h2V7H11m1 13c-4.41.0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8M12 2A10 10 0 002 12 10 10 0 0012 22 10 10 0 0022 12 10 10 0 0012 2M11 17h2V11H11v6z">
+</path>
+</svg>
+</span> 
+</span>
+<span class="dark:text-neutral-300" id="alert-message">%s</span></div></div>`
+)
 
-func (f *FormHandler) respond(w http.ResponseWriter, msg string, statusCode int) {
-	res := response{
-		Message: msg,
-		Success: http.StatusOK == statusCode,
+func (f *FormHandler) respond(w http.ResponseWriter, err error) {
+	w.WriteHeader(http.StatusOK)
+	var response string
+	if err != nil {
+		response = fmt.Sprintf(responseHTMLTemplate, "An error occured: "+err.Error())
+	} else {
+		response = fmt.Sprintf(responseHTMLTemplate, "Message has been sent. I will get back to you asap!")
 	}
 
-	jsonRes, err := json.Marshal(res)
+	_, err = w.Write([]byte(response))
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	_, err = w.Write(jsonRes)
-	if err != nil {
-		log.Warn().Err(err).Msg("error writing response")
+		log.Err(err).Msg("error writing response")
 	}
 }
