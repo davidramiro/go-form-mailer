@@ -79,8 +79,9 @@ func (m *MailService) Send(mail MailRequest) error {
 
 	var body bytes.Buffer
 	_, err = fmt.Fprintf(&body,
-		"Subject: %s \n%s\n\n",
+		"Subject: %s\nReply-To: %s\n%s\n\n",
 		mail.Subject,
+		mail.Email,
 		"MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n")
 	if err != nil {
 		return fmt.Errorf("writing mail header failed: %w", err)

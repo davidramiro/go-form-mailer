@@ -27,7 +27,11 @@ func NewFormHandler(mailService *service.MailService, frcClient friendlycaptcha.
 	}, nil
 }
 
+const maxFormBodySize = 1 << 19 // 500 KiB
+
 func (f *FormHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxFormBodySize)
+
 	err := r.ParseForm()
 	if err != nil {
 		f.respond(w, errors.New("Error parsing form"))
@@ -87,7 +91,6 @@ const (
 )
 
 func (f *FormHandler) respond(w http.ResponseWriter, err error) {
-
 	var response string
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
