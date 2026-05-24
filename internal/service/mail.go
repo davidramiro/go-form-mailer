@@ -33,7 +33,7 @@ type MailRequest struct {
 	Email              string `json:"email"`
 	Message            string `json:"message"`
 	Subject            string `json:"subject"`
-	FrcCaptchaSolution string `json:"frc-captcha-solution"`
+	FrcCaptchaResponse string `json:"frc-captcha-response"`
 }
 
 func NewMailService(params MailServiceParams) (*MailService, error) {
@@ -142,7 +142,7 @@ func (r MailRequest) Validate() error {
 		return errors.New("invalid message")
 	}
 
-	if len(r.FrcCaptchaSolution) == 0 {
+	if len(r.FrcCaptchaResponse) == 0 {
 		return errors.New("invalid captcha solution")
 	}
 

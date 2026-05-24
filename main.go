@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	friendlycaptcha "github.com/friendlycaptcha/friendly-captcha-go-sdk"
-
 	"github.com/davidramiro/go-form-mailer/internal/handler"
 	"github.com/davidramiro/go-form-mailer/internal/service"
+	friendlycaptcha "github.com/friendlycaptcha/friendly-captcha-go"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
@@ -38,11 +37,18 @@ func main() {
 
 	log.Info().Msg("initializing form handler")
 
-	frcClient := friendlycaptcha.NewClient(viper.GetString("frc.apiKey"), viper.GetString("frc.siteKey"))
-
-	fs, err := handler.NewFormHandler(ms, frcClient)
+	opts := []friendlycaptcha.ClientOption{
+		friendlycaptcha.WithAPIKey(viper.GetString("frc.apiKey")),
+		friendlycaptcha.WithSitekey(viper.GetString("frc.siteKey")),
+	}
+	frcClient, err := friendlycaptcha.NewClient(opts...)
 	if err != nil {
-		log.Fatal().Err(err).Msg("error creating form handler")
+		log.Fatal().Err(err).Msgf("error creating friendlycaptcha client: %v", err)
+	}
+
+	fs, err := handler.NewFormHandler(ms, *frcClient)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("error creating form handler: %v", err)
 	}
 
 	log.Info().Msg("spinning up server")

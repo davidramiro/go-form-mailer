@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	friendlycaptcha "github.com/friendlycaptcha/friendly-captcha-go-sdk"
+	friendlycaptcha "github.com/friendlycaptcha/friendly-captcha-go"
 	"github.com/rs/zerolog/log"
 
 	"github.com/davidramiro/go-form-mailer/internal/service"
@@ -43,7 +43,7 @@ func (f *FormHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Email:              r.Form.Get("email"),
 		Message:            r.Form.Get("message"),
 		Subject:            r.Form.Get("subject"),
-		FrcCaptchaSolution: r.Form.Get("frc-captcha-solution"),
+		FrcCaptchaResponse: r.Form.Get("frc-captcha-response"),
 	}
 
 	if err := req.Validate(); err != nil {
@@ -53,15 +53,16 @@ func (f *FormHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	log.Info().Interface("MailRequest", req).Msg("incoming form MailRequest")
 
-	solution := req.FrcCaptchaSolution
-	shouldAccept, err := f.frcClient.CheckCaptchaSolution(r.Context(), solution)
-	if err != nil {
+	solution := req.FrcCaptchaResponse
+	result := f.frcClient.VerifyCaptchaResponse(r.Context(), solution)
+
+	if result.Status != 200 {
 		log.Error().Err(err).Msg("captcha check error")
 		f.respond(w, errors.New("Captcha error"))
 		return
 	}
 
-	if !shouldAccept {
+	if !result.Success {
 		f.respond(w, errors.New("Invalid captcha"))
 		return
 	}
