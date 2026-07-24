@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/friendlycaptcha/friendly-captcha-go-sdk v0.1.3
-	github.com/go-faster/errors v0.7.1
+	github.com/go-faster/errors v0.8.0
 	github.com/rs/zerolog v1.35.1
 	github.com/spf13/viper v1.21.0
 )
