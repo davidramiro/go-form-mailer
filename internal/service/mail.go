@@ -9,6 +9,7 @@ import (
 	"net/smtp"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/go-faster/errors"
 
@@ -72,7 +73,9 @@ func (m *MailService) Send(mail MailRequest) error {
 	}
 	auth := smtp.PlainAuth("", m.params.SMTPUser, m.params.SMTPPass, m.params.SMTPHost)
 
-	t, err := template.ParseFiles("template/mail.html")
+	t, err := template.New("mail.html").Funcs(template.FuncMap{
+		"nl2br": nl2br,
+	}).ParseFiles("template/mail.html")
 	if err != nil {
 		return fmt.Errorf("template parsing failed: %w", err)
 	}
@@ -118,6 +121,15 @@ func (m *MailService) Send(mail MailRequest) error {
 	log.Info().Msg("email sent")
 
 	return nil
+}
+
+// nl2br escapes newlines for safe use in HTML and turns its line breaks into <br>
+// tags, so line breaks from a plain text form field survive in the HTML mail.
+func nl2br(s string) template.HTML {
+	escaped := strings.ReplaceAll(s, "\r\n", "\n")
+	escaped = template.HTMLEscapeString(escaped)
+
+	return template.HTML(strings.ReplaceAll(escaped, "\n", "<br>"))
 }
 
 const (
