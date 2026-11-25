@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/go-faster/errors"
 
@@ -68,6 +69,10 @@ func ValidateMailParams(s interface{}) error {
 }
 
 func (m *MailService) Send(mail MailRequest) error {
+	if err := validateSubject(mail.Subject); err != nil {
+		return err
+	}
+
 	to := []string{
 		m.params.ToMail,
 	}
@@ -129,13 +134,24 @@ func nl2br(s string) template.HTML {
 	escaped := strings.ReplaceAll(s, "\r\n", "\n")
 	escaped = template.HTMLEscapeString(escaped)
 
-	return template.HTML(strings.ReplaceAll(escaped, "\n", "<br>"))
+	return template.HTML(strings.ReplaceAll(escaped, "\n", "<br>")) // #nosec G203 / escaped before
 }
 
 const (
 	maxShort = 256
 	maxLong  = 80000
 )
+
+// validateSubject rejects empty, oversized, and control character containing
+// subjects. CR and LF must not reach the header block, otherwise a subject
+// could inject additional mail headers.
+func validateSubject(subject string) error {
+	if len(subject) == 0 || len(subject) > maxShort || strings.ContainsFunc(subject, unicode.IsControl) {
+		return errors.New("invalid subject")
+	}
+
+	return nil
+}
 
 func (r MailRequest) Validate() error {
 	if len(r.Name) == 0 || len(r.Name) > maxShort {
@@ -147,8 +163,8 @@ func (r MailRequest) Validate() error {
 	if _, err := mail.ParseAddress(r.Email); err != nil {
 		return errors.New("invalid email format")
 	}
-	if len(r.Subject) == 0 || len(r.Subject) > maxShort {
-		return errors.New("invalid subject")
+	if err := validateSubject(r.Subject); err != nil {
+		return err
 	}
 	if len(r.Message) == 0 || len(r.Message) > maxLong {
 		return errors.New("invalid message")

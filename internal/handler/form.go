@@ -56,7 +56,7 @@ func (f *FormHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	solution := req.FrcCaptchaResponse
 	result := f.frcClient.VerifyCaptchaResponse(r.Context(), solution)
 
-	if result.Status != 200 {
+	if result.Status != http.StatusOK {
 		log.Error().Err(err).Msg("captcha check error")
 		f.respond(w, errors.New("Captcha error"))
 		return
